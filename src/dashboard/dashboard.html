@@ -1,19 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>STAL Dashboard</title>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        margin: 0;
-        padding: 2rem;
-      }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STAL — Screen Time Analytics Dashboard</title>
+    <link rel="stylesheet" href="./dashboard.css" />
   </head>
   <body>
-    <h1>Screen Time Analytics Dashboard</h1>
-    <p>Loading analytics...</p>
+    <div class="app">
+      <!-- Sticky top bar -->
+      <header class="topbar">
+        <span class="logo">⏱ STAL</span>
+        <nav class="topbar-nav" aria-label="Main Navigation">
+          <a href="#overview" class="active" id="nav-overview">Overview</a>
+          <a href="#domains-section" id="nav-domains">By Domain</a>
+          <a href="#sessions-section" id="nav-sessions">Sessions</a>
+        </nav>
+        <div class="topbar-actions">
+          <button id="btn-export" class="btn btn-secondary">⬇ Export JSON</button>
+          <label class="btn btn-primary" style="position: relative;">
+            ⬆ Import JSON
+            <input id="input-import" type="file" accept=".json" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" />
+          </label>
+        </div>
+      </header>
+
+      <!-- Date range filter bar -->
+      <div class="date-range-bar" id="date-range-bar">
+        <button class="range-btn active" data-range="today">Today</button>
+        <button class="range-btn" data-range="7d">Last 7 days</button>
+        <button class="range-btn" data-range="30d">Last 30 days</button>
+        <button class="range-btn" data-range="custom">Custom Range</button>
+        
+        <div id="custom-range-inputs" style="display: none;">
+          <input type="date" id="range-from" aria-label="Start Date" />
+          <span>to</span>
+          <input type="date" id="range-to" aria-label="End Date" />
+          <button id="btn-apply-range" class="btn btn-primary">Apply</button>
+        </div>
+      </div>
+
+      <main class="main-content">
+        <!-- Summary cards row -->
+        <section class="summary-cards" aria-label="Summary statistics" id="overview">
+          <div class="stat-card" id="card-total-time">
+            <div class="stat-card__label">Total Time</div>
+            <div class="stat-card__value" id="stat-total-time">—</div>
+            <div class="stat-card__sub" id="stat-total-sub">0m tracked</div>
+          </div>
+          <div class="stat-card" id="card-top-site">
+            <div class="stat-card__label">Most Visited</div>
+            <div class="stat-card__value" id="stat-top-site" style="font-size: 1.4rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">—</div>
+            <div class="stat-card__sub" id="stat-top-site-time">0m</div>
+          </div>
+          <div class="stat-card" id="card-active-days">
+            <div class="stat-card__label">Active Days</div>
+            <div class="stat-card__value" id="stat-active-days">—</div>
+            <div class="stat-card__sub" id="stat-active-days-sub">Days logged</div>
+          </div>
+          <div class="stat-card" id="card-longest-session">
+            <div class="stat-card__label">Longest Session</div>
+            <div class="stat-card__value" id="stat-longest-session">—</div>
+            <div class="stat-card__sub" id="stat-longest-session-domain" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">None</div>
+          </div>
+        </section>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+          <!-- Bar chart: daily breakdown -->
+          <section class="chart-card" id="section-daily-chart">
+            <h2 class="chart-card__title">Daily Breakdown</h2>
+            <div class="chart-wrapper">
+              <canvas id="chart-daily" aria-label="Daily time bar chart"></canvas>
+            </div>
+          </section>
+
+          <!-- Doughnut chart: top domains -->
+          <section class="chart-card" id="section-domain-chart">
+            <h2 class="chart-card__title">Top Domains</h2>
+            <div class="chart-wrapper">
+              <canvas id="chart-domains" aria-label="Domain share doughnut chart"></canvas>
+            </div>
+          </section>
+        </div>
+
+        <!-- Domain table -->
+        <section class="table-section" id="domains-section">
+          <h2 class="section-title">All Domains</h2>
+          <div class="table-container">
+            <table class="domain-table" id="domain-table" aria-label="Domain time breakdown">
+              <thead>
+                <tr>
+                  <th data-col="domain" style="width: 30%;">Domain ↕</th>
+                  <th data-col="totalTime" style="width: 30%;">Total Time ↕</th>
+                  <th data-col="sessions" style="width: 15%;">Sessions ↕</th>
+                  <th data-col="firstSeen" style="width: 15%;">First Seen ↕</th>
+                  <th data-col="category" style="width: 10%;">Category</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+          <p class="empty-state" id="table-empty" style="display: none;">No browsing data for this period.</p>
+        </section>
+
+        <!-- Sessions list -->
+        <section class="table-section" id="sessions-section">
+          <h2 class="section-title">Recent Sessions</h2>
+          <div class="table-container">
+            <table class="domain-table" id="sessions-table" aria-label="Recent sessions">
+              <thead>
+                <tr>
+                  <th>Domain</th>
+                  <th>Started</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody id="sessions-body">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+          <p class="empty-state" id="sessions-empty" style="display: none;">No sessions logged yet.</p>
+        </section>
+      </main>
+    </div>
+
+    <!-- Toast notification container -->
+    <div id="toast-container" aria-live="polite"></div>
+
     <script type="module" src="./dashboard.js"></script>
   </body>
 </html>

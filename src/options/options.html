@@ -1,20 +1,156 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>STAL Options</title>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        max-width: 600px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-      }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>STAL — Configuration & Options</title>
+    <link rel="stylesheet" href="./options.css" />
   </head>
   <body>
-    <h1>STAL Configuration & Options</h1>
-    <p>Manage tracked domains, settings, and thresholds here.</p>
+    <div class="app">
+      <!-- Left Sidebar Navigation -->
+      <aside class="sidebar">
+        <div class="sidebar__logo">⏱ STAL</div>
+        <nav class="sidebar__nav" aria-label="Settings Navigation">
+          <a href="#section-general" class="sidebar-link active" id="link-general">⚙ General</a>
+          <a href="#section-categories" class="sidebar-link" id="link-categories">🏷 Categories</a>
+          <a href="#section-data" class="sidebar-link" id="link-data">💾 Data Mgmt</a>
+          <a href="#section-about" class="sidebar-link" id="link-about">ℹ About</a>
+        </nav>
+      </aside>
+
+      <!-- Main Content Panel -->
+      <main class="main-content">
+        <!-- Section 1: General Settings -->
+        <section id="section-general" class="settings-section">
+          <h1 class="section-heading">General Settings</h1>
+          <p class="section-description">Configure the behavior of tracking and background operations.</p>
+
+          <div class="setting-card">
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label" for="input-idle-threshold">Idle Detection Threshold</label>
+                <p class="setting-description">Time in seconds before tracking is paused due to user inactivity.</p>
+              </div>
+              <div class="setting-control">
+                <input type="number" id="input-idle-threshold" min="10" max="600" step="5" />
+                <span class="unit-label">seconds</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label" for="input-prune-days">Data Retention Period</label>
+                <p class="setting-description">Number of days of data to retain. History older than this is auto-pruned.</p>
+              </div>
+              <div class="setting-control">
+                <input type="number" id="input-prune-days" min="7" max="365" step="1" />
+                <span class="unit-label">days</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button id="btn-save-general" class="btn btn-primary">Save Changes</button>
+          </div>
+        </section>
+
+        <!-- Section 2: Categories -->
+        <section id="section-categories" class="settings-section" style="display: none;">
+          <h1 class="section-heading">Categories</h1>
+          <p class="section-description">Group domains into categories (e.g., "Entertainment" or "Work") to see structured breakdowns in the dashboard.</p>
+
+          <!-- Dynamic Categories list -->
+          <div id="categories-list" class="categories-list">
+            <!-- Rendered dynamically in JS -->
+          </div>
+
+          <!-- Add new category Form -->
+          <div class="add-category-form setting-card">
+            <h2 class="form-title">Add New Category</h2>
+            <p class="section-description" style="margin-bottom: 12px;">Create a new group and assign target hostnames to it.</p>
+            <div class="form-row" style="margin-bottom: 16px;">
+              <input type="text" id="input-cat-name" placeholder="Category Name (e.g. Work)" class="text-input" />
+            </div>
+            <div class="form-row" style="margin-bottom: 16px;">
+              <textarea id="input-cat-domains" placeholder="Enter domains (one per line, e.g.&#10;github.com&#10;stackoverflow.com)" class="textarea-input" rows="4"></textarea>
+            </div>
+            <button id="btn-add-category" class="btn btn-primary">Add Category</button>
+          </div>
+        </section>
+
+        <!-- Section 3: Data Management -->
+        <section id="section-data" class="settings-section" style="display: none;">
+          <h1 class="section-heading">Data Management</h1>
+          <p class="section-description">Backup, restore, and clear your local tracking data.</p>
+
+          <!-- Storage Meter -->
+          <div class="setting-card">
+            <div class="setting-label">Local Extension Storage Limit</div>
+            <div class="storage-bar-wrap">
+              <div class="storage-bar-outer">
+                <div id="storage-bar-inner" class="storage-bar-inner" style="width: 0%;"></div>
+              </div>
+              <span id="storage-label" class="storage-label-text">Calculating...</span>
+            </div>
+          </div>
+
+          <!-- Data Grid Buttons -->
+          <div class="data-actions-grid">
+            <div class="action-card">
+              <div class="action-card__icon">⬇</div>
+              <h2 class="action-card__title">Export Data</h2>
+              <p class="action-card__desc">Download a backup JSON file of all settings, categories, and tracked sessions.</p>
+              <button id="btn-export" class="btn btn-secondary">Export JSON</button>
+            </div>
+
+            <div class="action-card">
+              <div class="action-card__icon">⬆</div>
+              <h2 class="action-card__title">Import Data</h2>
+              <p class="action-card__desc">Upload an existing JSON backup. This validates and overwrites all current tracking data.</p>
+              <label class="btn btn-secondary" style="position: relative; cursor: pointer;">
+                Import JSON
+                <input id="input-import" type="file" accept=".json" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" />
+              </label>
+            </div>
+
+            <div class="action-card action-card--danger">
+              <div class="action-card__icon">✂</div>
+              <h2 class="action-card__title">Prune History</h2>
+              <p class="action-card__desc">Manually trigger a prune cycle to clear days and sessions older than the retention setting.</p>
+              <button id="btn-prune" class="btn btn-secondary">Run Prune</button>
+            </div>
+
+            <div class="action-card action-card--danger">
+              <div class="action-card__icon">🗑</div>
+              <h2 class="action-card__title">Factory Reset</h2>
+              <p class="action-card__desc">Completely clear all settings, categories, domains, and session history from this device.</p>
+              <button id="btn-clear-all" class="btn btn-danger">Clear All Data</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: About -->
+        <section id="section-about" class="settings-section" style="display: none;">
+          <h1 class="section-heading">About STAL</h1>
+          <p class="section-description">Screen Time Analytics & Logger details.</p>
+
+          <div class="setting-card about-card">
+            <div class="about-logo">⏱ STAL</div>
+            <div class="about-tagline">Screen Time Analytics & Logger</div>
+            <div class="about-version">Version <span id="about-version">1.0.0</span></div>
+            <p class="about-desc">
+              STAL is a privacy-focused browser extension designed to run entirely locally in your browser.
+              No statistics or browsing history are shared with remote servers.
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Toast message container -->
+    <div id="toast-container" aria-live="polite"></div>
+
     <script type="module" src="./options.js"></script>
   </body>
 </html>
