@@ -1,3 +1,10 @@
+/**
+ * Chrome Storage Quotas (reference):
+ *  - chrome.storage.local  : 10 MB total (unlimited with "unlimitedStorage" permission)
+ *  - chrome.storage.sync   : 100 KB total / 8 KB per item / 1,800 items max
+ *  - chrome.storage.session: 10 MB (cleared when browser session ends)
+ */
+
 import { DEFAULT_DATA } from './schema.js';
 import { migrateData } from './migrations.js';
 import { validateData } from './validator.js';
@@ -15,10 +22,11 @@ export async function getData() {
   // Apply migrations
   data = migrateData(data);
 
-  // Validate the data structure (log errors but return data to prevent locking the user out)
+  // Validate the data structure. If corrupt, fallback to DEFAULT_DATA.
   const validation = validateData(data);
   if (!validation.success) {
-    console.warn('Data validation warning:', validation.errors);
+    console.warn('Data validation warning, falling back to DEFAULT_DATA. Errors:', validation.errors);
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
   }
 
   return data;
@@ -159,4 +167,90 @@ export async function clearDay(dateStr) {
     delete data.days[dateStr];
     await setData(data);
   }
+}
+
+/**
+ * Fetches current data, converts to a JSON string, and triggers a browser file download.
+ * File pattern: screenTime_backup_YYYY-MM-DD.json
+ */
+export async function exportData() {
+  const data = await getData();
+  const jsonString = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  const filename = `screenTime_backup_${todayStr}.json`;
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Parses JSON, validates it using the Zod schema, and replaces the current storage data.
+ * Throws clear errors if validation fails.
+ * @param {string} jsonString - The raw JSON backup string
+ */
+export async function importData(jsonString) {
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch (err) {
+    throw new SyntaxError(`Failed to parse JSON backup: ${err.message}`);
+  }
+
+  const validation = validateData(parsed);
+  if (!validation.success) {
+    throw new Error(`Import validation failed:\n- ${validation.errors.join('\n- ')}`);
+  }
+
+  await setData(validation.data || parsed);
+}
+
+/**
+ * Deletes entries in the days object and sessions list older than the specified threshold
+ * to prevent quota exhaustion.
+ * @param {number} [daysToKeep=90] - Cutoff age in days
+ * @returns {Promise<{ prunedDays: number, prunedSessions: number }>}
+ */
+export async function pruneOldData(daysToKeep = 90) {
+  const data = await getData();
+  const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
+  
+  let prunedDays = 0;
+  let prunedSessions = 0;
+
+  // Prune days
+  if (data.days) {
+    for (const dateStr of Object.keys(data.days)) {
+      const dateTime = new Date(dateStr).getTime();
+      if (isNaN(dateTime) || dateTime < cutoffTime) {
+        delete data.days[dateStr];
+        prunedDays++;
+      }
+    }
+  }
+
+  // Prune sessions
+  if (Array.isArray(data.sessions)) {
+    const originalLength = data.sessions.length;
+    data.sessions = data.sessions.filter(session => {
+      const sessionTime = new Date(session.endTime || session.startTime).getTime();
+      return !isNaN(sessionTime) && sessionTime >= cutoffTime;
+    });
+    prunedSessions = originalLength - data.sessions.length;
+  }
+
+  await setData(data);
+
+  return {
+    prunedDays,
+    prunedSessions
+  };
 }
