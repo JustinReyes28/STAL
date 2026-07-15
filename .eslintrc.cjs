@@ -1,0 +1,9 @@
+module.exports = {
+  env: { browser: true, es2022: true, webextensions: true },
+  extends: ['eslint:recommended', 'prettier'],
+  parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+  rules: {
+    'no-unused-vars': 'warn',
+    'no-console': 'off',
+  },
+};

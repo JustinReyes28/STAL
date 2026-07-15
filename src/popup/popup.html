@@ -1,24 +1,47 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Screen Time Tracker</title>
-    <style>
-      body {
-        width: 300px;
-        font-family: system-ui, sans-serif;
-        padding: 1rem;
-        margin: 0;
-      }
-      h1 {
-        font-size: 1.25rem;
-        margin-top: 0;
-      }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>STAL — Screen Time Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./popup.css" />
   </head>
   <body>
-    <h1>STAL Tracker</h1>
-    <p>Tracking active tab time...</p>
+    <header class="header">
+      <span class="logo">⏱ STAL</span>
+      <button id="btn-options" class="icon-btn" title="Options" aria-label="Open Options">⚙</button>
+    </header>
+
+    <main>
+      <!-- Total today -->
+      <section class="total-card" aria-label="Total time today">
+        <div class="total-label">Today</div>
+        <div id="total-time" class="total-time">—</div>
+      </section>
+
+      <!-- Live tracking -->
+      <section class="live-section" id="live-section" hidden>
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="live-domain" id="live-domain">—</span>
+        <span class="live-timer" id="live-timer">0s</span>
+      </section>
+
+      <!-- Top sites today -->
+      <section class="sites-section">
+        <h2 class="section-title">Top Sites Today</h2>
+        <ol id="site-list" class="site-list">
+          <li class="site-list__empty" id="empty-msg">No data yet. Start browsing!</li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <button id="btn-dashboard" class="btn btn-primary">📊 Dashboard</button>
+      <button id="btn-options-footer" class="btn btn-secondary">⚙ Options</button>
+    </footer>
+
     <script type="module" src="./popup.js"></script>
   </body>
 </html>
